@@ -1,0 +1,177 @@
+// ==UserScript==
+// @name        AmbTV MyList Checker 🔲🔲🔲
+// @namespace        http://tampermonkey.net/
+// @version        0.1
+// @description        マイリストを利用した無料配信のチェックツール
+// @author        AbemaTV User
+// @match        https://abema.tv/*
+// @icon        https://www.google.com/s2/favicons?sz=64&domain=abema.tv
+// @grant        none
+// ==/UserScript==
+
+
+let target0=document.querySelector('head > title');
+let monitor0=new MutationObserver(area_check);
+monitor0.observe(target0, { childList: true });
+
+area_check();
+
+function area_check(){
+    if(window.location.pathname=='/mylist'){
+        let retry0=0;
+        let interval0=setInterval(wait_target0, 40);
+        function wait_target0(){
+            retry0++;
+            if(retry0>100){ // リトライ制限 100回 4secまで
+                clearInterval(interval0); }
+            let list_ul=document.querySelector(
+                '.com-pages-mylist-MylistContentItemList, .com-my-list-MyListEmpty');
+            if(list_ul){
+                clearInterval(interval0);
+                main(); }}}
+
+} // area_check()
+
+
+
+function main(){
+
+    let sect_disp=localStorage.getItem('ABEMA_Mylist_disp') ?? 0; //「sort」の表示選択
+
+    let sizes={ //「size」の表示選択
+        sizeA: localStorage.getItem('ABEMA_Mylist_sizeA') ?? 0 ,
+        sizeS: localStorage.getItem('ABEMA_Mylist_sizeS') ?? 0 ,
+        sizeE: localStorage.getItem('ABEMA_Mylist_sizeE') ?? 0 };
+
+
+    let panel=
+        '<div class="my_p">'+
+        '<div class="list_sort com-shared-mypage-MypageSidebar__item">'+
+        '<label><input name="sect_disp" type="radio" value="0">リスト全体を表示</label>'+
+        '<div class="size_set">'+
+        '　　size :'+
+        '<label><input name="sizeA" type="radio" value="0">L</label>'+
+        '<label><input name="sizeA" type="radio" value="1">M</label>'+
+        '<label><input name="sizeA" type="radio" value="2">S</label></div></div>'+
+
+        '<div class="list_sort com-shared-mypage-MypageSidebar__item">'+
+        '<label><input name="sect_disp" type="radio" value="1">シリーズ登録のみ表示</label>'+
+        '<div class="size_set">'+
+        '　　size :'+
+        '<label><input name="sizeS" type="radio" value="0">L</label>'+
+        '<label><input name="sizeS" type="radio" value="1">M</label>'+
+        '<label><input name="sizeS" type="radio" value="2">S</label></div></div>'+
+
+        '<div class="list_sort com-shared-mypage-MypageSidebar__item">'+
+        '<label><input name="sect_disp" type="radio" value="2">エピソード登録のみ表示</label>'+
+        '<div class="size_set">'+
+        '　　size :'+
+        '<label><input name="sizeE" type="radio" value="0">L</label>'+
+        '<label><input name="sizeE" type="radio" value="1">M</label>'+
+        '<label><input name="sizeE" type="radio" value="2">S</label></div></div>'+
+
+        '<style>'+
+        '.list_sort { display: flex; flex-direction: column; align-items: start; '+
+        'height: fit-content; padding: 8px 8px 4px 16px; line-height: 1.4; margin: 32px 0 -24px; } '+
+        '.list_sort.disp { outline: 1px solid #777; } '+
+        '.list_sort input[name="sect_disp"] { display: none; } '+
+        '.list_sort input[type="radio"] { margin: 0 4px 0 12px; } '+
+        '</style>'+
+        '</div>';
+
+    let sidebar=document.querySelector('.com-shared-mypage-MypageSidebar');
+
+    if(sidebar && !document.querySelector('.my_p')){
+        sidebar.insertAdjacentHTML('beforeend', panel); }
+
+
+
+    disp_selected(sect_disp); //「sort」形式を設定
+
+    let input_disp=document.querySelectorAll('input[name="sect_disp"]');
+    input_disp.forEach(radio=>{
+        radio.addEventListener('change', (event)=>{
+            sect_disp=event.target.value;
+            disp_selected(sect_disp);
+            localStorage.setItem('ABEMA_Mylist_disp', sect_disp);
+        }); });
+
+    let list_sort_button=document.querySelectorAll('.list_sort');
+    list_sort_button.forEach(button=>{
+        button.addEventListener('click', (event)=>{
+            button.querySelector('input[name="sect_disp"]').click();
+        }); });
+
+    function disp_selected(n){
+        let list_sort=document.querySelectorAll('.list_sort');
+        list_sort.forEach((el, k)=>{
+            el.classList.toggle('disp', k==n); }); }
+
+
+
+    size_selected('A', sizes.sizeA); //「リスト全体を表示」のサイズ設定
+    size_selected('S', sizes.sizeS); //「シリーズ登録のみ表示」のサイズ設定
+    size_selected('E', sizes.sizeE); //「エビソード登録のみ表示」のサイズ設定
+
+    set_size('A');
+    set_size('S');
+    set_size('E');
+
+    function set_size(type){
+        let radios=document.querySelectorAll('input[name="size'+ type +'"]');
+        radios.forEach(radio=>{
+            radio.addEventListener('change', (event)=>{
+                sizes['size' + type]=event.target.value;
+                localStorage.setItem('ABEMA_Mylist_size'+ type, sizes['size' + type]);
+            }); }); }
+
+    function size_selected(type, n){
+        let radio=document.querySelectorAll('input[name="size'+ type +'"]');
+        if(radio.length==3){
+            radio[n].checked=true; }}
+
+
+
+    let my_list=document.querySelector('.com-pages-mylist-MylistContentItemList');
+    if(my_list){
+        let monitor1=new MutationObserver(disp_now_count);
+        monitor1.observe(my_list, { childList: true }); }
+
+    disp_now_count();
+
+    function disp_now_count(){
+        let help_url='';
+        //   'https://ameblo.jp/personwritep/entry-12971904361.html';
+
+        let help_svg=
+            '<svg width="20" height="20" style="vertical-align: -5px;" '+
+            'viewBox="0 0 200 200">'+
+            '<path style="fill: #3ca5da" d="M92 14C54 19 23 44 15 82C4 135 49 '+
+            '192 105 186C143 181 175 156 183 118C195 64 149 7 92 14z"></path>'+
+            '<path style="fill: #000" d="M63 69C70 67 76 64 82 61C92 58 116 58 110 '+
+            '76C103 96 81 101 81 125L112 125C112 111 123 105 132 96C141 85 1'+
+            '46 69 140 55C131 34 102 33 83 37C78 38 69 39 65 43C60 47 63 63 63 '+
+            '69M83 143L83 169L111 169L111 143L83 143z"></path></svg>';
+
+        let disp_order=document.querySelector('.com-m-SelectMenuForDesktop');
+        let list=document.querySelector('.com-pages-mylist-MylistContentItemList');
+        if(disp_order && list){
+            let list_all=list.querySelectorAll('.com-pages-mylist-MylistContentItemList>li');
+            let episode=list.querySelectorAll('a[href*="episode"]');
+            let slots=list.querySelectorAll('a[href*="slots"]');
+
+            let count_disp=
+                '<div class="count_d" style="color: #fff">'+
+                '<a href="'+ help_url + '" rel="noopener noreferrer" target="_blank">'+ help_svg+
+                '</a>　シリーズ登録：'+ (list_all.length - episode.length - slots.length) +
+                '　エビソード登録：'+ (episode.length + slots.length) +
+                '</div>';
+
+            if(document.querySelector('.count_d')){
+                document.querySelector('.count_d').remove(); }
+            disp_order.insertAdjacentHTML('beforebegin', count_disp); }
+
+    } // disp_now_count()
+
+
+} // main()
