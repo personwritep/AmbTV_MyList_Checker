@@ -40,10 +40,10 @@ function main(){
 
     let sect_disp=localStorage.getItem('ABEMA_Mylist_disp') ?? 0; //「sort」の表示選択
 
-    let sizes={ //「size」の表示選択
-        sizeA: localStorage.getItem('ABEMA_Mylist_sizeA') ?? 0 ,
-        sizeS: localStorage.getItem('ABEMA_Mylist_sizeS') ?? 0 ,
-        sizeE: localStorage.getItem('ABEMA_Mylist_sizeE') ?? 0 };
+    let read_json=localStorage.getItem('ABEMA_Mylist_size'); //「size」の表示選択
+    let sizes=JSON.parse(read_json);
+    if(sizes==null){
+        sizes=[0, 0, 0]; }
 
 
     let panel=
@@ -111,9 +111,9 @@ function main(){
 
 
 
-    size_selected('A', sizes.sizeA); //「リスト全体を表示」のサイズ設定
-    size_selected('S', sizes.sizeS); //「シリーズ登録のみ表示」のサイズ設定
-    size_selected('E', sizes.sizeE); //「エビソード登録のみ表示」のサイズ設定
+    size_selected('A', sizes[0]/1); //「リスト全体を表示」のサイズ設定
+    size_selected('S', sizes[1]/1); //「シリーズ登録のみ表示」のサイズ設定
+    size_selected('E', sizes[2]/1); //「エビソード登録のみ表示」のサイズ設定
 
     set_size('A');
     set_size('S');
@@ -121,10 +121,17 @@ function main(){
 
     function set_size(type){
         let radios=document.querySelectorAll('input[name="size'+ type +'"]');
+        let t;
+        switch(type){
+            case 'A': t=0; break;
+            case 'S': t=1; break;
+            case 'E': t=2; break; }
+
         radios.forEach(radio=>{
             radio.addEventListener('change', (event)=>{
-                sizes['size' + type]=event.target.value;
-                localStorage.setItem('ABEMA_Mylist_size'+ type, sizes['size' + type]);
+                sizes[t]=event.target.value;
+                let write_json=JSON.stringify(sizes);
+                localStorage.setItem('ABEMA_Mylist_size', write_json);
             }); }); }
 
     function size_selected(type, n){
