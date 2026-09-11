@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        AmbTV MyList Checker
 // @namespace        http://tampermonkey.net/
-// @version        0.1
+// @version        0.2
 // @description        マイリストを利用した無料配信のチェックツール
 // @author        AbemaTV User
 // @match        https://abema.tv/*
@@ -38,7 +38,7 @@ function area_check(){
 
 function main(){
 
-    let sect_disp=localStorage.getItem('ABEMA_Mylist_disp') ?? 0; //「sort」の表示選択
+    let sected_disp=localStorage.getItem('ABEMA_Mylist_disp') ?? 0; //「sort」の表示選択
 
     let read_json=localStorage.getItem('ABEMA_Mylist_size'); //「size」の表示選択
     let sizes=JSON.parse(read_json);
@@ -51,7 +51,7 @@ function main(){
         '<div class="list_sort com-shared-mypage-MypageSidebar__item">'+
         '<label><input name="sect_disp" type="radio" value="0">リスト全体を表示</label>'+
         '<div class="size_set">'+
-        '　　size :'+
+        'size :'+
         '<label><input name="sizeA" type="radio" value="0">L</label>'+
         '<label><input name="sizeA" type="radio" value="1">M</label>'+
         '<label><input name="sizeA" type="radio" value="2">S</label></div></div>'+
@@ -59,7 +59,7 @@ function main(){
         '<div class="list_sort com-shared-mypage-MypageSidebar__item">'+
         '<label><input name="sect_disp" type="radio" value="1">シリーズ登録のみ表示</label>'+
         '<div class="size_set">'+
-        '　　size :'+
+        'size :'+
         '<label><input name="sizeS" type="radio" value="0">L</label>'+
         '<label><input name="sizeS" type="radio" value="1">M</label>'+
         '<label><input name="sizeS" type="radio" value="2">S</label></div></div>'+
@@ -67,17 +67,21 @@ function main(){
         '<div class="list_sort com-shared-mypage-MypageSidebar__item">'+
         '<label><input name="sect_disp" type="radio" value="2">エピソード登録のみ表示</label>'+
         '<div class="size_set">'+
-        '　　size :'+
+        'size :'+
         '<label><input name="sizeE" type="radio" value="0">L</label>'+
         '<label><input name="sizeE" type="radio" value="1">M</label>'+
         '<label><input name="sizeE" type="radio" value="2">S</label></div></div>'+
 
         '<style>'+
         '.list_sort { display: flex; flex-direction: column; align-items: start; '+
-        'height: fit-content; padding: 8px 8px 4px 16px; line-height: 1.4; margin: 32px 0 -24px; } '+
+        'height: fit-content; padding: 8px 8px 4px 16px; line-height: 1.6; margin: 32px 0 -24px; } '+
         '.list_sort.disp { outline: 1px solid #777; } '+
+        '.list_sort, .list_sort > label { cursor: pointer; } '+
         '.list_sort input[name="sect_disp"] { display: none; } '+
-        '.list_sort input[type="radio"] { margin: 0 4px 0 12px; } '+
+        '.list_sort input[type="radio"] { margin: 0 4px 0 8px; } '+
+        '.size_set { align-self: flex-end; } '+
+        'h1.com-a-PageTitle { display: none; } '+
+        '.com-pages-mylist-MylistPage__header { white-space: nowrap; } '+
         '</style>'+
         '</div>';
 
@@ -88,14 +92,91 @@ function main(){
 
 
 
-    disp_selected(sect_disp); //「sort」形式を設定
+    let mlc_style=
+        '<style class="basic">'+ // Basic
+        '.com-pages-mylist-MylistContentItemList { background-color: #071521; border-radius: 0; } '+
+        '.com-my-list-MyListBaseItem__thumbnail { margin: 0; } '+
+        '.com-my-list-MyListBaseItem .com-shared-viewing_type-ViewingTypeLabel__text { '+
+        'padding: 4px 6px 3px; font-size: 13px; } '+
+        '.com-my-list-MyListBaseItem .com-shared-viewing_type-ViewingTypeLabel__text--free { '+
+        'color: #000; background: #4fc3f7; } '+
+        '.com-my-list-MyListBaseItem__delete-icon { color: red; } '+
+        '.com-my-list-MyListBaseItem__delete-button:hover .com-my-list-MyListBaseItem__delete-icon, '+
+        '.com-my-list-MyListBaseItem__delete-button:focus-within '+
+        '.com-my-list-MyListBaseItem__delete-icon { opacity: 0.8; } '+
+        '</style>'+
+
+        '<style class="normal" disabled>'+ // Normal
+        '</style>'+
+
+        '<style class="compact" disabled>'+ // Compact
+        '.com-my-list-MyListBaseItem { margin: 2px 0; height: 60px; overflow: hidden; } '+
+        '.com-my-list-MyListBaseItem__thumbnail { width: 80px; margin: 0; } '+
+        '.com-my-list-MyListBaseItem__details { position: relative; padding: 0; } '+
+        '.com-my-list-EpisodeListItem__series-title { color: #fafafa; font-size: 13px; } '+
+        '.com-my-list-EpisodeListItem__title { margin-top: 2px; } '+
+        '.com-my-list-SeriesListItem__title, .com-my-list-LiveEventListItem__title { margin-top: 10px; } '+
+        '.com-my-list-SlotGroupListItem__title { margin-top: 9px; } '+
+        '.com-my-list-EpisodeListItem__expiration, .com-my-list-SlotListItem__expiration { '+
+        'position: absolute; top: 12px; right: 0; font-size: 0; gap: 0; margin-top: 0; } '+
+        '.com-my-list-MyListBaseItem__delete-button { width: 24px; height: 24px; margin-left: 12px; } '+
+        '</style>'+
+
+        '<style class="mini" disabled>'+ // Mini
+        '.com-my-list-MyListBaseItem { height: 38px; margin: 2px 0; overflow: hidden; } '+
+        '.com-my-list-MyListBaseItem__thumbnail { display: none; } '+
+        '.com-my-list-MyListBaseItem__details { position: relative; display: flex; padding: 0; } '+
+        '.com-my-list-EpisodeListItem__series-title { font-size: 16px; font-weight: bold; '+
+        'line-height: 1.4; width: 45%; flex-shrink: 0; margin-right: 15px; color: #eee } '+
+        '.com-my-list-EpisodeListItem__title { font-size: 16px; margin-top: 0; line-height: 1.4; width: 40%; } '+
+        '.com-my-list-SeriesListItem__title, .com-my-list-LiveEventListItem__title { '+
+        'font-size: 16px; margin-top: 0; color: #eee; } '+
+        '.com-my-list-SlotGroupListItem__title, .com-my-list-SlotListItem__title { '+
+        'font-size: 16px; margin-top: 0; color: #eee; } '+
+        '.com-my-list-MyListBaseItem .com-a-CollapsedText__container { line-height: 1.4 !important; } '+
+        '.com-my-list-SlotListItem__start-at { display: none; } '+
+        '.com-my-list-EpisodeListItem__expiration, .com-my-list-SlotListItem__expiration { '+
+        'position: absolute; top: 1px; right: 0; font-size: 0; gap: 0; margin-top: 0; } '+
+        '.com-my-list-MyListBaseItem__delete-button { width: 24px; height: 24px; margin-left: 12px; } '+
+        '</style>'+
+
+        '<style class="all_list" disabled>'+ // リスト全体を表示
+        '</style>'+
+
+        '<style class="serise" disabled>'+ // シリーズ登録を表示
+        '.com-pages-mylist-MylistContentItemList li:has(a[href*="slots"]), '+
+        '.com-pages-mylist-MylistContentItemList li:has(a[href*="episode"]) { display: none; } '+
+        '</style>'+
+
+        '<style class="episode" disabled>'+ // エピソード登録を表示
+        '.com-pages-mylist-MylistContentItemList '+
+        'li:not(:has(a[href*="slots"])):not(:has(a[href*="episode"])) { display: none; } '+
+        '</style>';
+
+    if(!document.querySelector('.basic')){
+        document.body.insertAdjacentHTML('beforeend', mlc_style); }
+
+
+
+    let sect_disp_style=[
+        document.querySelector('.all_list'),
+        document.querySelector('.serise'),
+        document.querySelector('.episode') ];
+
+    let sect_size_style=[
+        document.querySelector('.normal'),
+        document.querySelector('.compact'),
+        document.querySelector('.mini') ];
+
+
+    disp_selected(sected_disp/1); //「sort」形式を設定
 
     let input_disp=document.querySelectorAll('input[name="sect_disp"]');
     input_disp.forEach(radio=>{
         radio.addEventListener('change', (event)=>{
-            sect_disp=event.target.value;
-            disp_selected(sect_disp);
-            localStorage.setItem('ABEMA_Mylist_disp', sect_disp);
+            sected_disp=event.target.value;
+            disp_selected(sected_disp/1);
+            localStorage.setItem('ABEMA_Mylist_disp', sected_disp);
         }); });
 
     let list_sort_button=document.querySelectorAll('.list_sort');
@@ -107,8 +188,14 @@ function main(){
     function disp_selected(n){
         let list_sort=document.querySelectorAll('.list_sort');
         list_sort.forEach((el, k)=>{
-            el.classList.toggle('disp', k==n); }); }
+            el.classList.toggle('disp', k==n);
 
+            sect_disp_style.forEach((sect_disp_style, index)=>{
+                sect_disp_style.disabled=(index !==n); });
+
+            sect_size_style.forEach((sect_size_style, index)=>{
+                sect_size_style.disabled=(index !==sizes[n]/1); });
+        }); }
 
 
     size_selected('A', sizes[0]/1); //「リスト全体を表示」のサイズ設定
@@ -132,12 +219,22 @@ function main(){
                 sizes[t]=event.target.value;
                 let write_json=JSON.stringify(sizes);
                 localStorage.setItem('ABEMA_Mylist_size', write_json);
+
+                sect_size_style.forEach((sect_size_style, index)=>{
+                    sect_size_style.disabled=(index !==sizes[t]/1); });
             }); }); }
 
     function size_selected(type, n){
         let radio=document.querySelectorAll('input[name="size'+ type +'"]');
         if(radio.length==3){
             radio[n].checked=true; }}
+
+
+
+    let nav_button=document.querySelector('.com-m-side-nav-toggle-button');
+    if(nav_button){
+        if(!document.querySelector('.com-application-SideNavigation--closed')){
+            nav_button.click(); }}
 
 
 
@@ -181,6 +278,5 @@ function main(){
             disp_order.insertAdjacentHTML('beforebegin', count_disp); }
 
     } // disp_now_count()
-
 
 } // main()
