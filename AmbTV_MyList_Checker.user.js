@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        AmbTV MyList Checker
 // @namespace        http://tampermonkey.net/
-// @version        0.2
+// @version        0.3
 // @description        マイリストを利用した無料配信のチェックツール
 // @author        AbemaTV User
 // @match        https://abema.tv/*
@@ -46,40 +46,59 @@ function main(){
         sizes=[0, 0, 0]; }
 
 
+    let size0_svg=
+        '<svg class="size0" viewBox="0 0 24 24" width="20" height="20" '+
+        'style="display: inline-block;"><rect width="24" height="24" x="0" y="0" '+
+        'fill="#09586c" stroke-width="1" stroke="#fff"></rect></svg>';
+
+    let size1_svg=
+        '<svg class="size1" viewBox="0 0 24 24" width="20" height="20" '+
+        'style="display: inline-block;"><rect width="24" height="14" x="0" y="5" '+
+        'fill="#09586c" stroke-width="1" stroke="#fff"></rect></svg>';
+
+    let size2_svg=
+        '<svg class="size2" viewBox="0 0 24 24" width="20" height="20" '+
+        'style="display: inline-block;"><rect width="24" height="8" x="0" y="8" '+
+        'fill="#09586c" stroke-width="1" stroke="#fff"></rect></svg>';
+
     let panel=
         '<div class="my_p">'+
         '<div class="list_sort com-shared-mypage-MypageSidebar__item">'+
         '<label><input name="sect_disp" type="radio" value="0">リスト全体を表示</label>'+
         '<div class="size_set">'+
-        'size :'+
-        '<label><input name="sizeA" type="radio" value="0">L</label>'+
-        '<label><input name="sizeA" type="radio" value="1">M</label>'+
-        '<label><input name="sizeA" type="radio" value="2">S</label></div></div>'+
+        'size:'+
+        '<label><input name="sizeA" type="radio" value="0">'+ size0_svg +'</label>'+
+        '<label><input name="sizeA" type="radio" value="1">'+ size1_svg +'</label>'+
+        '<label><input name="sizeA" type="radio" value="2">'+ size2_svg +'</label></div></div>'+
 
         '<div class="list_sort com-shared-mypage-MypageSidebar__item">'+
         '<label><input name="sect_disp" type="radio" value="1">シリーズ登録のみ表示</label>'+
         '<div class="size_set">'+
-        'size :'+
-        '<label><input name="sizeS" type="radio" value="0">L</label>'+
-        '<label><input name="sizeS" type="radio" value="1">M</label>'+
-        '<label><input name="sizeS" type="radio" value="2">S</label></div></div>'+
+        'size:'+
+        '<label><input name="sizeS" type="radio" value="0">'+ size0_svg +'</label>'+
+        '<label><input name="sizeS" type="radio" value="1">'+ size1_svg +'</label>'+
+        '<label><input name="sizeS" type="radio" value="2">'+ size2_svg +'</label></div></div>'+
 
         '<div class="list_sort com-shared-mypage-MypageSidebar__item">'+
         '<label><input name="sect_disp" type="radio" value="2">エピソード登録のみ表示</label>'+
         '<div class="size_set">'+
-        'size :'+
-        '<label><input name="sizeE" type="radio" value="0">L</label>'+
-        '<label><input name="sizeE" type="radio" value="1">M</label>'+
-        '<label><input name="sizeE" type="radio" value="2">S</label></div></div>'+
+        'size:'+
+        '<label><input name="sizeE" type="radio" value="0">'+ size0_svg +'</label>'+
+        '<label><input name="sizeE" type="radio" value="1">'+ size1_svg +'</label>'+
+        '<label><input name="sizeE" type="radio" value="2">'+ size2_svg +'</label></div></div>'+
 
         '<style>'+
         '.list_sort { display: flex; flex-direction: column; align-items: start; '+
-        'height: fit-content; padding: 8px 8px 4px 16px; line-height: 1.6; margin: 32px 0 -24px; } '+
+        'height: fit-content; padding: 8px 8px 5px 16px; line-height: 1.6; margin: 30px 0 -20px; } '+
         '.list_sort.disp { outline: 1px solid #777; } '+
         '.list_sort, .list_sort > label { cursor: pointer; } '+
         '.list_sort input[name="sect_disp"] { display: none; } '+
-        '.list_sort input[type="radio"] { margin: 0 4px 0 8px; } '+
-        '.size_set { align-self: flex-end; } '+
+        '.list_sort .size_set input[type="radio"] { margin: 0 4px; vertical-align: -3px; cursor: pointer; } '+
+        '.size_set { font-size: 16px; height: 30px; color: #0ad8d8; cursor: default; display: none; } '+
+        '.size_set label { margin-left: 14px; cursor: pointer; } '+
+        '.size_set svg { vertical-align: -6px; } '+
+        '.size_set.open { display: block; } '+
+
         'h1.com-a-PageTitle { display: none; } '+
         '.com-pages-mylist-MylistPage__header { white-space: nowrap; } '+
         '</style>'+
@@ -89,6 +108,9 @@ function main(){
 
     if(sidebar && !document.querySelector('.my_p')){
         sidebar.insertAdjacentHTML('beforeend', panel); }
+
+
+
 
 
 
@@ -169,6 +191,7 @@ function main(){
         document.querySelector('.mini') ];
 
 
+
     disp_selected(sected_disp/1); //「sort」形式を設定
 
     let input_disp=document.querySelectorAll('input[name="sect_disp"]');
@@ -183,6 +206,10 @@ function main(){
     list_sort_button.forEach(button=>{
         button.addEventListener('click', (event)=>{
             button.querySelector('input[name="sect_disp"]').click();
+            close_all_size_set(); // .size_setを全て閉じる
+
+            if(event.ctrlKey){
+                toggle_size_set(button); }
         }); });
 
     function disp_selected(n){
@@ -196,6 +223,21 @@ function main(){
             sect_size_style.forEach((sect_size_style, index)=>{
                 sect_size_style.disabled=(index !==sizes[n]/1); });
         }); }
+
+    function toggle_size_set(button){
+        let size_set=button.querySelector('.size_set');
+        if(size_set){
+            size_set.classList.toggle('open'); }}
+
+    let size_set_all=document.querySelectorAll('.size_set');
+    size_set_all.forEach(self=>{
+        self.addEventListener('click', (event)=>{
+            event.stopImmediatePropagation(); }); });
+
+    function close_all_size_set(){
+        size_set_all.forEach(self=>{
+            self.classList.remove('open'); }); }
+
 
 
     size_selected('A', sizes[0]/1); //「リスト全体を表示」のサイズ設定
@@ -234,7 +276,7 @@ function main(){
     let nav_button=document.querySelector('.com-m-side-nav-toggle-button');
     if(nav_button){
         if(!document.querySelector('.com-application-SideNavigation--closed')){
-            nav_button.click(); }}
+            nav_button.click(); }} // デフォルトで左サイドメニューを閉じる
 
 
 
@@ -246,8 +288,7 @@ function main(){
     disp_now_count();
 
     function disp_now_count(){
-        let help_url='';
-        //   'https://ameblo.jp/personwritep/entry-12971904361.html';
+        let help_url='https://ameblo.jp/personwritep/entry-12978398816.html';
 
         let help_svg=
             '<svg width="20" height="20" style="vertical-align: -5px;" '+
