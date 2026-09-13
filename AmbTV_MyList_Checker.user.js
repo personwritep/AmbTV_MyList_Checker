@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        AmbTV MyList Checker
 // @namespace        http://tampermonkey.net/
-// @version        0.3
+// @version        0.4
 // @description        マイリストを利用した無料配信のチェックツール
 // @author        AbemaTV User
 // @match        https://abema.tv/*
@@ -10,6 +10,15 @@
 // @updateURL        https://github.com/personwritep/AmbTV_MyList_Checker/raw/main/AmbTV_MyList_Checker.user.js
 // @downloadURL        https://github.com/personwritep/AmbTV_MyList_Checker/raw/main/AmbTV_MyList_Checker.user.js
 // ==/UserScript==
+
+
+let sected_disp=localStorage.getItem('ABEMA_Mylist_disp') ?? 0; //「sort」の表示選択
+
+let read_json=localStorage.getItem('ABEMA_Mylist_size'); //「size」の表示選択
+let sizes=JSON.parse(read_json);
+if(sizes==null){
+    sizes=[0, 0, 0]; }
+
 
 
 let target0=document.querySelector('head > title');
@@ -30,155 +39,46 @@ function area_check(){
                 '.com-pages-mylist-MylistContentItemList, .com-my-list-MyListEmpty');
             if(list_ul){
                 clearInterval(interval0);
+                base_style();
                 main(); }}}
+
+
+    else if(window.location.pathname=='/viewing-history'){
+        let retry0=0;
+        let interval0=setInterval(wait_target0, 40);
+        function wait_target0(){
+            retry0++;
+            if(retry0>100){ // リトライ制限 100回 4secまで
+                clearInterval(interval0); }
+            let list_ul=document.querySelector(
+                '.com-pages-viewing-history-ViewingHistoryList, '+
+                '.com-pages-viewing-history-ViewingHistoryNoItem');
+            if(list_ul){
+                clearInterval(interval0);
+                base_style();
+                main_sub(); }}}
+
+
+    else if(window.location.pathname=='/purchased/payperview'){
+        let retry0=0;
+        let interval0=setInterval(wait_target0, 40);
+        function wait_target0(){
+            retry0++;
+            if(retry0>100){ // リトライ制限 100回 4secまで
+                clearInterval(interval0); }
+            let list_ul=document.querySelector(
+                '.com-pages-purchased-payperview-PurchasedPayperviewNoItem');
+            if(list_ul){
+                clearInterval(interval0);
+                base_style();
+                main_sub(); }}}
+
 
 } // area_check()
 
 
 
 function main(){
-
-    let sected_disp=localStorage.getItem('ABEMA_Mylist_disp') ?? 0; //「sort」の表示選択
-
-    let read_json=localStorage.getItem('ABEMA_Mylist_size'); //「size」の表示選択
-    let sizes=JSON.parse(read_json);
-    if(sizes==null){
-        sizes=[0, 0, 0]; }
-
-
-    let size0_svg=
-        '<svg class="size0" viewBox="0 0 24 24" width="20" height="20" '+
-        'style="display: inline-block;"><rect width="24" height="24" x="0" y="0" '+
-        'fill="#09586c" stroke-width="1" stroke="#fff"></rect></svg>';
-
-    let size1_svg=
-        '<svg class="size1" viewBox="0 0 24 24" width="20" height="20" '+
-        'style="display: inline-block;"><rect width="24" height="14" x="0" y="5" '+
-        'fill="#09586c" stroke-width="1" stroke="#fff"></rect></svg>';
-
-    let size2_svg=
-        '<svg class="size2" viewBox="0 0 24 24" width="20" height="20" '+
-        'style="display: inline-block;"><rect width="24" height="8" x="0" y="8" '+
-        'fill="#09586c" stroke-width="1" stroke="#fff"></rect></svg>';
-
-    let panel=
-        '<div class="my_p">'+
-        '<div class="list_sort com-shared-mypage-MypageSidebar__item">'+
-        '<label><input name="sect_disp" type="radio" value="0">リスト全体を表示</label>'+
-        '<div class="size_set">'+
-        'size:'+
-        '<label><input name="sizeA" type="radio" value="0">'+ size0_svg +'</label>'+
-        '<label><input name="sizeA" type="radio" value="1">'+ size1_svg +'</label>'+
-        '<label><input name="sizeA" type="radio" value="2">'+ size2_svg +'</label></div></div>'+
-
-        '<div class="list_sort com-shared-mypage-MypageSidebar__item">'+
-        '<label><input name="sect_disp" type="radio" value="1">シリーズ登録のみ表示</label>'+
-        '<div class="size_set">'+
-        'size:'+
-        '<label><input name="sizeS" type="radio" value="0">'+ size0_svg +'</label>'+
-        '<label><input name="sizeS" type="radio" value="1">'+ size1_svg +'</label>'+
-        '<label><input name="sizeS" type="radio" value="2">'+ size2_svg +'</label></div></div>'+
-
-        '<div class="list_sort com-shared-mypage-MypageSidebar__item">'+
-        '<label><input name="sect_disp" type="radio" value="2">エピソード登録のみ表示</label>'+
-        '<div class="size_set">'+
-        'size:'+
-        '<label><input name="sizeE" type="radio" value="0">'+ size0_svg +'</label>'+
-        '<label><input name="sizeE" type="radio" value="1">'+ size1_svg +'</label>'+
-        '<label><input name="sizeE" type="radio" value="2">'+ size2_svg +'</label></div></div>'+
-
-        '<style>'+
-        '.list_sort { display: flex; flex-direction: column; align-items: start; '+
-        'height: fit-content; padding: 8px 8px 5px 16px; line-height: 1.6; margin: 30px 0 -20px; } '+
-        '.list_sort.disp { outline: 1px solid #777; } '+
-        '.list_sort, .list_sort > label { cursor: pointer; } '+
-        '.list_sort input[name="sect_disp"] { display: none; } '+
-        '.list_sort .size_set input[type="radio"] { margin: 0 4px; vertical-align: -3px; cursor: pointer; } '+
-        '.size_set { font-size: 16px; height: 30px; color: #0ad8d8; cursor: default; display: none; } '+
-        '.size_set label { margin-left: 14px; cursor: pointer; } '+
-        '.size_set svg { vertical-align: -6px; } '+
-        '.size_set.open { display: block; } '+
-
-        'h1.com-a-PageTitle { display: none; } '+
-        '.com-pages-mylist-MylistPage__header { white-space: nowrap; } '+
-        '</style>'+
-        '</div>';
-
-    let sidebar=document.querySelector('.com-shared-mypage-MypageSidebar');
-
-    if(sidebar && !document.querySelector('.my_p')){
-        sidebar.insertAdjacentHTML('beforeend', panel); }
-
-
-
-
-
-
-    let mlc_style=
-        '<style class="basic">'+ // Basic
-        '.com-pages-mylist-MylistContentItemList { background-color: #071521; border-radius: 0; } '+
-        '.com-my-list-MyListBaseItem__thumbnail { margin: 0; } '+
-        '.com-my-list-MyListBaseItem .com-shared-viewing_type-ViewingTypeLabel__text { '+
-        'padding: 4px 6px 3px; font-size: 13px; } '+
-        '.com-my-list-MyListBaseItem .com-shared-viewing_type-ViewingTypeLabel__text--free { '+
-        'color: #000; background: #4fc3f7; } '+
-        '.com-my-list-MyListBaseItem__delete-icon { color: red; } '+
-        '.com-my-list-MyListBaseItem__delete-button:hover .com-my-list-MyListBaseItem__delete-icon, '+
-        '.com-my-list-MyListBaseItem__delete-button:focus-within '+
-        '.com-my-list-MyListBaseItem__delete-icon { opacity: 0.8; } '+
-        '</style>'+
-
-        '<style class="normal" disabled>'+ // Normal
-        '</style>'+
-
-        '<style class="compact" disabled>'+ // Compact
-        '.com-my-list-MyListBaseItem { margin: 2px 0; height: 60px; overflow: hidden; } '+
-        '.com-my-list-MyListBaseItem__thumbnail { width: 80px; margin: 0; } '+
-        '.com-my-list-MyListBaseItem__details { position: relative; padding: 0; } '+
-        '.com-my-list-EpisodeListItem__series-title { color: #fafafa; font-size: 13px; } '+
-        '.com-my-list-EpisodeListItem__title { margin-top: 2px; } '+
-        '.com-my-list-SeriesListItem__title, .com-my-list-LiveEventListItem__title { margin-top: 10px; } '+
-        '.com-my-list-SlotGroupListItem__title { margin-top: 9px; } '+
-        '.com-my-list-EpisodeListItem__expiration, .com-my-list-SlotListItem__expiration { '+
-        'position: absolute; top: 12px; right: 0; font-size: 0; gap: 0; margin-top: 0; } '+
-        '.com-my-list-MyListBaseItem__delete-button { width: 24px; height: 24px; margin-left: 12px; } '+
-        '</style>'+
-
-        '<style class="mini" disabled>'+ // Mini
-        '.com-my-list-MyListBaseItem { height: 38px; margin: 2px 0; overflow: hidden; } '+
-        '.com-my-list-MyListBaseItem__thumbnail { display: none; } '+
-        '.com-my-list-MyListBaseItem__details { position: relative; display: flex; padding: 0; } '+
-        '.com-my-list-EpisodeListItem__series-title { font-size: 16px; font-weight: bold; '+
-        'line-height: 1.4; width: 45%; flex-shrink: 0; margin-right: 15px; color: #eee } '+
-        '.com-my-list-EpisodeListItem__title { font-size: 16px; margin-top: 0; line-height: 1.4; width: 40%; } '+
-        '.com-my-list-SeriesListItem__title, .com-my-list-LiveEventListItem__title { '+
-        'font-size: 16px; margin-top: 0; color: #eee; } '+
-        '.com-my-list-SlotGroupListItem__title, .com-my-list-SlotListItem__title { '+
-        'font-size: 16px; margin-top: 0; color: #eee; } '+
-        '.com-my-list-MyListBaseItem .com-a-CollapsedText__container { line-height: 1.4 !important; } '+
-        '.com-my-list-SlotListItem__start-at { display: none; } '+
-        '.com-my-list-EpisodeListItem__expiration, .com-my-list-SlotListItem__expiration { '+
-        'position: absolute; top: 1px; right: 0; font-size: 0; gap: 0; margin-top: 0; } '+
-        '.com-my-list-MyListBaseItem__delete-button { width: 24px; height: 24px; margin-left: 12px; } '+
-        '</style>'+
-
-        '<style class="all_list" disabled>'+ // リスト全体を表示
-        '</style>'+
-
-        '<style class="serise" disabled>'+ // シリーズ登録を表示
-        '.com-pages-mylist-MylistContentItemList li:has(a[href*="slots"]), '+
-        '.com-pages-mylist-MylistContentItemList li:has(a[href*="episode"]) { display: none; } '+
-        '</style>'+
-
-        '<style class="episode" disabled>'+ // エピソード登録を表示
-        '.com-pages-mylist-MylistContentItemList '+
-        'li:not(:has(a[href*="slots"])):not(:has(a[href*="episode"])) { display: none; } '+
-        '</style>';
-
-    if(!document.querySelector('.basic')){
-        document.body.insertAdjacentHTML('beforeend', mlc_style); }
-
-
 
     let sect_disp_style=[
         document.querySelector('.all_list'),
@@ -191,7 +91,7 @@ function main(){
         document.querySelector('.mini') ];
 
 
-
+    sected_disp=localStorage.getItem('ABEMA_Mylist_disp');
     disp_selected(sected_disp/1); //「sort」形式を設定
 
     let input_disp=document.querySelectorAll('input[name="sect_disp"]');
@@ -321,3 +221,190 @@ function main(){
     } // disp_now_count()
 
 } // main()
+
+
+
+
+function base_style(){
+
+    let size0_svg=
+        '<svg class="size0" viewBox="0 0 24 24" width="20" height="20" '+
+        'style="display: inline-block;"><rect width="24" height="24" x="0" y="0" '+
+        'fill="#09586c" stroke-width="1" stroke="#fff"></rect></svg>';
+
+    let size1_svg=
+        '<svg class="size1" viewBox="0 0 24 24" width="20" height="20" '+
+        'style="display: inline-block;"><rect width="24" height="14" x="0" y="5" '+
+        'fill="#09586c" stroke-width="1" stroke="#fff"></rect></svg>';
+
+    let size2_svg=
+        '<svg class="size2" viewBox="0 0 24 24" width="20" height="20" '+
+        'style="display: inline-block;"><rect width="24" height="8" x="0" y="8" '+
+        'fill="#09586c" stroke-width="1" stroke="#fff"></rect></svg>';
+
+    let panel=
+        '<div class="my_p">'+
+        '<div class="list_sort com-shared-mypage-MypageSidebar__item">'+
+        '<label><input name="sect_disp" type="radio" value="0">リスト全体を表示</label>'+
+        '<div class="size_set">'+
+        'size:'+
+        '<label><input name="sizeA" type="radio" value="0">'+ size0_svg +'</label>'+
+        '<label><input name="sizeA" type="radio" value="1">'+ size1_svg +'</label>'+
+        '<label><input name="sizeA" type="radio" value="2">'+ size2_svg +'</label></div></div>'+
+
+        '<div class="list_sort com-shared-mypage-MypageSidebar__item">'+
+        '<label><input name="sect_disp" type="radio" value="1">シリーズ登録のみ表示</label>'+
+        '<div class="size_set">'+
+        'size:'+
+        '<label><input name="sizeS" type="radio" value="0">'+ size0_svg +'</label>'+
+        '<label><input name="sizeS" type="radio" value="1">'+ size1_svg +'</label>'+
+        '<label><input name="sizeS" type="radio" value="2">'+ size2_svg +'</label></div></div>'+
+
+        '<div class="list_sort com-shared-mypage-MypageSidebar__item">'+
+        '<label><input name="sect_disp" type="radio" value="2">エピソード登録のみ表示</label>'+
+        '<div class="size_set">'+
+        'size:'+
+        '<label><input name="sizeE" type="radio" value="0">'+ size0_svg +'</label>'+
+        '<label><input name="sizeE" type="radio" value="1">'+ size1_svg +'</label>'+
+        '<label><input name="sizeE" type="radio" value="2">'+ size2_svg +'</label></div></div>'+
+
+        '<style>'+
+        'nav.com-shared-mypage-MypageSidebar a { font-size: 18px !important; } '+
+        'nav a[href="/purchased/payperview"] { order: 1; } '+
+        'nav a[href="/viewing-history"] { order: 2; } '+
+        'nav a[href="/mylist"] { order: 3; } '+
+        '.my_p { margin: 10px 0 40px; order: 4; } '+
+        '.list_sort { display: flex; flex-direction: column; align-items: start; '+
+        'height: fit-content; padding: 11px 8px 8px 10px; line-height: 1.6; margin: 0 0 8px; } '+
+        '.list_sort.disp { outline: 1px solid #777; } '+
+        '.list_sort, .list_sort > label { cursor: pointer; } '+
+        '.list_sort input[name="sect_disp"] { visibility: hidden; } '+
+        '.list_sort .size_set input[type="radio"] { margin: 0 4px; vertical-align: -3px; cursor: pointer; } '+
+        '.size_set { font-size: 16px; margin: 4px 0 4px 6px; color: #0ad8d8; cursor: default; '+
+        'display: none; } '+
+        '.size_set label { margin-left: 14px; cursor: pointer; } '+
+        '.size_set svg { vertical-align: -6px; } '+
+        '.size_set.open { display: block; } '+
+
+        '.com-a-ResponsiveMainContent { padding: 0 0 0 24px !important; height: calc(100vh - 68px); } '+
+        'h1.com-a-PageTitle { display: none; } '+
+        '.com-shared-mypage-MypageLayout__content { gap: 10px; position: fixed; width: stretch; } '+
+        '.com-shared-mypage-MypageLayout__main { margin: -48px 0 0; } '+
+        '.com-pages-mylist-MylistPage__header { white-space: nowrap; } '+
+        '.com-pages-mylist-MylistContentItemList, '+
+        '.com-pages-viewing-history-ViewingHistoryList { '+
+        'overflow-y: scroll; padding: 0 8px 0 2px; height: calc(100vh - 145px); } '+
+        '.c-application-FooterContainer { display: none; } '+
+        '</style>'+
+        '</div>';
+
+    let sidebar=document.querySelector('.com-shared-mypage-MypageSidebar a[href*="mylist"]');
+
+    if(sidebar && !document.querySelector('.my_p')){
+        sidebar.insertAdjacentHTML('afterend', panel); }
+
+
+
+    let mlc_style=
+        '<style class="basic">'+ // Basic
+        '.com-pages-mylist-MylistContentItemList { background: #071521; border-radius: 0; } '+
+        '.com-my-list-MyListBaseItem__thumbnail { margin: 0; } '+
+        '.com-my-list-MyListBaseItem .com-shared-viewing_type-ViewingTypeLabel__text { '+
+        'padding: 4px 6px 3px; font-size: 13px; } '+
+        '.com-my-list-MyListBaseItem .com-shared-viewing_type-ViewingTypeLabel__text--free { '+
+        'color: #000; background: #4fc3f7; } '+
+        '.com-my-list-MyListBaseItem__delete-icon { color: red; } '+
+        '.com-my-list-MyListBaseItem__delete-button:hover '+
+        '.com-my-list-MyListBaseItem__delete-icon, '+
+        '.com-my-list-MyListBaseItem__delete-button:focus-within '+
+        '.com-my-list-MyListBaseItem__delete-icon { opacity: 0.8; } '+
+        '</style>'+
+
+        '<style class="history" >'+ // History
+        'com-pages-viewing-history-ViewingHistoryList { background: #071521; border-radius: 0; } '+
+        '.com-pages-viewing-history-ViewingHistoryListItem { margin: 4px 0; } '+
+        '.com-pages-viewing-history-ViewingHistoryListItem__link { padding: 2px 8px; } '+
+        '.com-pages-viewing-history-ViewingHistoryListItem '+
+        '.com-shared-viewing_type-ViewingTypeLabel__text { padding: 4px 6px 3px; font-size: 13px; } '+
+        '.com-pages-viewing-history-ViewingHistoryListItem '+
+        '.com-shared-viewing_type-ViewingTypeLabel__text--free { color: #000; background: #4fc3f7; } '+
+        '.com-pages-viewing-history-ViewingHistoryListItem__delete-icon { color: red; } '+
+        '.com-pages-viewing-history-ViewingHistoryListItem__delete-button:hover '+
+        '.com-pages-viewing-history-ViewingHistoryListItem__delete-icon, '+
+        '.com-pages-viewing-history-ViewingHistoryListItem__delete-button:focus-within '+
+        '.com-pages-viewing-history-ViewingHistoryListItem__delete-icon { opacity: 0.8; } '+
+        '.com-pages-viewing-history-ViewingHistoryListEpisodeItem__series-title { '+
+        'font-size: 16px; font-weight: normal; margin-top: 6px; color: #e6e6e6; } '+
+        '.com-pages-viewing-history-ViewingHistoryListEpisodeItem__title { '+
+        'font-size: 18px; font-weight: bold; color: #ddd; } '+
+        '</style>'+
+
+        '<style class="normal" disabled>'+ // Normal
+        '</style>'+
+
+        '<style class="compact" disabled>'+ // Compact
+        '.com-my-list-MyListBaseItem { margin: 2px 0; height: 60px; overflow: hidden; } '+
+        '.com-my-list-MyListBaseItem__thumbnail { width: 80px; margin: 0; } '+
+        '.com-my-list-MyListBaseItem__details { position: relative; padding: 0; } '+
+        '.com-my-list-EpisodeListItem__series-title { color: #fafafa; font-size: 13px; } '+
+        '.com-my-list-EpisodeListItem__title { margin-top: 2px; } '+
+        '.com-my-list-SeriesListItem__title, .com-my-list-LiveEventListItem__title { margin-top: 10px; } '+
+        '.com-my-list-SlotGroupListItem__title { margin-top: 9px; } '+
+        '.com-my-list-EpisodeListItem__expiration, .com-my-list-SlotListItem__expiration { '+
+        'position: absolute; top: 12px; right: 0; font-size: 0; gap: 0; margin-top: 0; } '+
+        '.com-my-list-MyListBaseItem__delete-button { width: 24px; height: 24px; margin-left: 12px; } '+
+        '</style>'+
+
+        '<style class="mini" disabled>'+ // Mini
+        '.com-my-list-MyListBaseItem { height: 38px; margin: 2px 0; overflow: hidden; } '+
+        '.com-my-list-MyListBaseItem__thumbnail { display: none; } '+
+        '.com-my-list-MyListBaseItem__details { position: relative; display: flex; padding: 0; } '+
+        '.com-my-list-EpisodeListItem__series-title { font-size: 16px; font-weight: bold; '+
+        'line-height: 1.4; width: 45%; flex-shrink: 0; margin-right: 15px; color: #eee } '+
+        '.com-my-list-EpisodeListItem__title { font-size: 16px; margin-top: 0; line-height: 1.4; width: 40%; } '+
+        '.com-my-list-SeriesListItem__title, .com-my-list-LiveEventListItem__title { '+
+        'font-size: 16px; margin-top: 0; color: #eee; } '+
+        '.com-my-list-SlotGroupListItem__title, .com-my-list-SlotListItem__title { '+
+        'font-size: 16px; margin-top: 0; color: #eee; } '+
+        '.com-my-list-MyListBaseItem .com-a-CollapsedText__container { line-height: 1.4 !important; } '+
+        '.com-my-list-SlotListItem__start-at { display: none; } '+
+        '.com-my-list-EpisodeListItem__expiration, .com-my-list-SlotListItem__expiration { '+
+        'position: absolute; top: 1px; right: 0; font-size: 0; gap: 0; margin-top: 0; } '+
+        '.com-my-list-MyListBaseItem__delete-button { width: 24px; height: 24px; margin-left: 12px; } '+
+        '</style>'+
+
+        '<style class="all_list" disabled>'+ // リスト全体を表示
+        '</style>'+
+
+        '<style class="serise" disabled>'+ // シリーズ登録を表示
+        '.com-pages-mylist-MylistContentItemList li:has(a[href*="slots"]), '+
+        '.com-pages-mylist-MylistContentItemList li:has(a[href*="episode"]) { display: none; } '+
+        '</style>'+
+
+        '<style class="episode" disabled>'+ // エピソード登録を表示
+        '.com-pages-mylist-MylistContentItemList '+
+        'li:not(:has(a[href*="slots"])):not(:has(a[href*="episode"])) { display: none; } '+
+        '</style>';
+
+    if(!document.querySelector('.basic')){
+        document.body.insertAdjacentHTML('beforeend', mlc_style); }
+
+} // base_style()
+
+
+
+
+function main_sub(){
+    let list_sort_button=document.querySelectorAll('.list_sort');
+    list_sort_button.forEach((button, index)=>{
+        button.addEventListener('click', (event)=>{
+            localStorage.setItem('ABEMA_Mylist_disp', index);
+
+            setTimeout(()=>{
+                let nav=document.querySelector('.com-shared-mypage-MypageSidebar__item');
+                if(nav){
+                    nav.click(); }
+            }, 600);
+        }); });
+
+} // main_sub()
