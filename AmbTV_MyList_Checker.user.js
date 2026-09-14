@@ -286,9 +286,10 @@ function base_style(){
         '.size_set svg { vertical-align: -6px; } '+
         '.size_set.open { display: block; } '+
 
-        '.com-a-ResponsiveMainContent { padding: 0 0 0 24px !important; height: calc(100vh - 68px); } '+
+        '.com-a-ResponsiveMainContent { padding: 0 0 0 40px !important; height: calc(100vh - 68px); } '+
+        '.com-a-ResponsiveMainContent__inner { margin: 0; } '+
         'h1.com-a-PageTitle { display: none; } '+
-        '.com-shared-mypage-MypageLayout__content { gap: 10px; position: fixed; width: stretch; } '+
+        '.com-shared-mypage-MypageLayout__content { gap: 10px; } '+
         '.com-shared-mypage-MypageLayout__main { margin: -48px 0 0; } '+
         '.com-pages-mylist-MylistPage__header { white-space: nowrap; } '+
         '.com-pages-mylist-MylistContentItemList, '+
