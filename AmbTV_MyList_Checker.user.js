@@ -273,7 +273,7 @@ function base_style(){
         'nav a[href="/purchased/payperview"] { order: 1; } '+
         'nav a[href="/viewing-history"] { order: 2; } '+
         'nav a[href="/mylist"] { order: 3; } '+
-        '.my_p { margin: 10px 0 40px; order: 4; } '+
+        '.my_p { order: 4; margin: 10px 0 20px; } '+
         '.list_sort { display: flex; flex-direction: column; align-items: start; '+
         'height: fit-content; padding: 11px 8px 8px 10px; line-height: 1.6; margin: 0 0 8px; } '+
         '.list_sort.disp { outline: 1px solid #777; } '+
