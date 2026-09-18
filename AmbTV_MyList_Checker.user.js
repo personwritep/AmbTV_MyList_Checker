@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        AmbTV MyList Checker
 // @namespace        http://tampermonkey.net/
-// @version        0.4
+// @version        0.5
 // @description        マイリストを利用した無料配信のチェックツール
 // @author        AbemaTV User
 // @match        https://abema.tv/*
@@ -179,11 +179,10 @@ function main(){
             nav_button.click(); }} // デフォルトで左サイドメニューを閉じる
 
 
-
-    let my_list=document.querySelector('.com-pages-mylist-MylistContentItemList');
-    if(my_list){
+    let mylist_w=document.querySelector('.com-pages-mylist-MylistPage__contentListWrapper');
+    if(mylist_w){
         let monitor1=new MutationObserver(disp_now_count);
-        monitor1.observe(my_list, { childList: true }); }
+        monitor1.observe(mylist_w, { childList: true, subtree: true }); }
 
     disp_now_count();
 
@@ -201,11 +200,15 @@ function main(){
             '69M83 143L83 169L111 169L111 143L83 143z"></path></svg>';
 
         let disp_order=document.querySelector('.com-m-SelectMenuForDesktop');
-        let list=document.querySelector('.com-pages-mylist-MylistContentItemList');
-        if(disp_order && list){
-            let list_all=list.querySelectorAll('.com-pages-mylist-MylistContentItemList>li');
-            let episode=list.querySelectorAll('a[href*="episode"]');
-            let slots=list.querySelectorAll('a[href*="slots"]');
+        if(disp_order){
+            let list_all=[];
+            let episode=[];
+            let slots=[];
+            let list=document.querySelector('.com-pages-mylist-MylistContentItemList');
+            if(list){
+                list_all=list.querySelectorAll('.com-pages-mylist-MylistContentItemList>li');
+                episode=list.querySelectorAll('a[href*="episode"]');
+                slots=list.querySelectorAll('a[href*="slots"]'); }
 
             let count_disp=
                 '<div class="count_d" style="color: #fff">'+
@@ -309,31 +312,31 @@ function base_style(){
     let mlc_style=
         '<style class="basic">'+ // Basic
         '.com-pages-mylist-MylistContentItemList { background: #071521; border-radius: 0; } '+
+        '.com-my-list-MyListBaseItem__wrapper { margin: 0; padding: 8px; } '+
         '.com-my-list-MyListBaseItem__thumbnail { margin: 0; } '+
-        '.com-my-list-MyListBaseItem .com-shared-viewing_type-ViewingTypeLabel__text { '+
+        '.com-shared-viewing_type-ViewingTypeLabel__text { '+
         'padding: 4px 6px 3px; font-size: 13px; } '+
-        '.com-my-list-MyListBaseItem .com-shared-viewing_type-ViewingTypeLabel__text--free { '+
+        '.com-shared-viewing_type-ViewingTypeLabel__text--free { '+
         'color: #000; background: #4fc3f7; } '+
-        '.com-my-list-MyListBaseItem__delete-icon { color: red; } '+
+        'a[href*="/slots"] .com-shared-viewing_type-ViewingTypeLabel__text--premium { '+
+        'font-weight: normal; color: #fff; background: #007db6; } '+
+        '.com-my-list-MyListBaseItem__delete-button { '+
+        'width: 24px; height: 24px; margin-left: 12px; } '+
+        '.com-my-list-MyListBaseItem__delete-icon { color: red; opacity: 0.7; } '+
         '.com-my-list-MyListBaseItem__delete-button:hover '+
-        '.com-my-list-MyListBaseItem__delete-icon, '+
-        '.com-my-list-MyListBaseItem__delete-button:focus-within '+
-        '.com-my-list-MyListBaseItem__delete-icon { opacity: 0.8; } '+
+        '.com-my-list-MyListBaseItem__delete-icon { opacity: 1; } '+
+
         '</style>'+
 
         '<style class="history" >'+ // History
         'com-pages-viewing-history-ViewingHistoryList { background: #071521; border-radius: 0; } '+
         '.com-pages-viewing-history-ViewingHistoryListItem { margin: 4px 0; } '+
         '.com-pages-viewing-history-ViewingHistoryListItem__link { padding: 2px 8px; } '+
-        '.com-pages-viewing-history-ViewingHistoryListItem '+
-        '.com-shared-viewing_type-ViewingTypeLabel__text { padding: 4px 6px 3px; font-size: 13px; } '+
-        '.com-pages-viewing-history-ViewingHistoryListItem '+
-        '.com-shared-viewing_type-ViewingTypeLabel__text--free { color: #000; background: #4fc3f7; } '+
-        '.com-pages-viewing-history-ViewingHistoryListItem__delete-icon { color: red; } '+
+        '.com-pages-viewing-history-ViewingHistoryListItem__delete-icon { color: red; opacity: 0.7; } '+
+        '.com-pages-viewing-history-ViewingHistoryListItem:hover '+
+        '.com-pages-viewing-history-ViewingHistoryListItem__delete-button { opacity: 1; } '+
         '.com-pages-viewing-history-ViewingHistoryListItem__delete-button:hover '+
-        '.com-pages-viewing-history-ViewingHistoryListItem__delete-icon, '+
-        '.com-pages-viewing-history-ViewingHistoryListItem__delete-button:focus-within '+
-        '.com-pages-viewing-history-ViewingHistoryListItem__delete-icon { opacity: 0.8; } '+
+        '.com-pages-viewing-history-ViewingHistoryListItem__delete-icon { opacity: 1; } '+
         '.com-pages-viewing-history-ViewingHistoryListEpisodeItem__series-title { '+
         'font-size: 16px; font-weight: normal; margin-top: 6px; color: #e6e6e6; } '+
         '.com-pages-viewing-history-ViewingHistoryListEpisodeItem__title { '+
@@ -353,7 +356,6 @@ function base_style(){
         '.com-my-list-SlotGroupListItem__title { margin-top: 9px; } '+
         '.com-my-list-EpisodeListItem__expiration, .com-my-list-SlotListItem__expiration { '+
         'position: absolute; top: 12px; right: 0; font-size: 0; gap: 0; margin-top: 0; } '+
-        '.com-my-list-MyListBaseItem__delete-button { width: 24px; height: 24px; margin-left: 12px; } '+
         '</style>'+
 
         '<style class="mini" disabled>'+ // Mini
@@ -368,10 +370,9 @@ function base_style(){
         '.com-my-list-SlotGroupListItem__title, .com-my-list-SlotListItem__title { '+
         'font-size: 16px; margin-top: 0; color: #eee; } '+
         '.com-my-list-MyListBaseItem .com-a-CollapsedText__container { line-height: 1.4 !important; } '+
-        '.com-my-list-SlotListItem__start-at { display: none; } '+
+        '.com-my-list-SlotListItem__start-at { color: #43ecff; margin: 6px 10px 0; } '+
         '.com-my-list-EpisodeListItem__expiration, .com-my-list-SlotListItem__expiration { '+
         'position: absolute; top: 1px; right: 0; font-size: 0; gap: 0; margin-top: 0; } '+
-        '.com-my-list-MyListBaseItem__delete-button { width: 24px; height: 24px; margin-left: 12px; } '+
         '</style>'+
 
         '<style class="all_list" disabled>'+ // リスト全体を表示
@@ -387,8 +388,10 @@ function base_style(){
         'li:not(:has(a[href*="slots"])):not(:has(a[href*="episode"])) { display: none; } '+
         '</style>';
 
-    if(!document.querySelector('.basic')){
-        document.body.insertAdjacentHTML('beforeend', mlc_style); }
+    let main=document.querySelector('.c-application-DesktopAppContainer__main');
+    if(main){
+        if(!main.querySelector('.basic')){
+            main.insertAdjacentHTML('beforeend', mlc_style); }}
 
 } // base_style()
 
