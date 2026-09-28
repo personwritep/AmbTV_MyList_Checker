@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        AmbTV MyList Checker
 // @namespace        http://tampermonkey.net/
-// @version        0.5
+// @version        0.6
 // @description        マイリストを利用した無料配信のチェックツール
 // @author        AbemaTV User
 // @match        https://abema.tv/*
@@ -28,51 +28,59 @@ monitor0.observe(target0, { childList: true });
 area_check();
 
 function area_check(){
-    if(window.location.pathname=='/mylist'){
-        let retry0=0;
-        let interval0=setInterval(wait_target0, 40);
-        function wait_target0(){
-            retry0++;
-            if(retry0>100){ // リトライ制限 100回 4secまで
-                clearInterval(interval0); }
-            let list_ul=document.querySelector(
-                '.com-pages-mylist-MylistContentItemList, .com-my-list-MyListEmpty');
-            if(list_ul){
-                clearInterval(interval0);
-                base_style();
-                main(); }}}
+    let actions={
+        '/mylist': ()=>{
+            let retry0=0;
+            let interval0=setInterval(wait_target0, 40);
+            function wait_target0(){
+                retry0++;
+                if(retry0>100){ // リトライ制限 100回 4secまで
+                    clearInterval(interval0); }
+                let list_ul=document.querySelector(
+                    '.com-pages-mylist-MylistContentItemList, .com-my-list-MyListEmpty');
+                if(list_ul){
+                    clearInterval(interval0);
+                    base_style();
+                    main(); }}},
+
+        '/viewing-history': ()=>{
+            let retry0=0;
+            let interval0=setInterval(wait_target0, 40);
+            function wait_target0(){
+                retry0++;
+                if(retry0>100){ // リトライ制限 100回 4secまで
+                    clearInterval(interval0); }
+                let list_ul=document.querySelector(
+                    '.com-pages-viewing-history-ViewingHistoryList, '+
+                    '.com-pages-viewing-history-ViewingHistoryNoItem');
+                if(list_ul){
+                    clearInterval(interval0);
+                    base_style();
+                    main_sub(); }}},
+
+        '/purchased/payperview': ()=>{
+            let retry0=0;
+            let interval0=setInterval(wait_target0, 40);
+            function wait_target0(){
+                retry0++;
+                if(retry0>100){ // リトライ制限 100回 4secまで
+                    clearInterval(interval0); }
+                let list_ul=document.querySelector(
+                    '.com-pages-purchased-payperview-PurchasedPayperviewNoItem');
+                if(list_ul){
+                    clearInterval(interval0);
+                    base_style();
+                    main_sub(); }}}};
 
 
-    else if(window.location.pathname=='/viewing-history'){
-        let retry0=0;
-        let interval0=setInterval(wait_target0, 40);
-        function wait_target0(){
-            retry0++;
-            if(retry0>100){ // リトライ制限 100回 4secまで
-                clearInterval(interval0); }
-            let list_ul=document.querySelector(
-                '.com-pages-viewing-history-ViewingHistoryList, '+
-                '.com-pages-viewing-history-ViewingHistoryNoItem');
-            if(list_ul){
-                clearInterval(interval0);
-                base_style();
-                main_sub(); }}}
-
-
-    else if(window.location.pathname=='/purchased/payperview'){
-        let retry0=0;
-        let interval0=setInterval(wait_target0, 40);
-        function wait_target0(){
-            retry0++;
-            if(retry0>100){ // リトライ制限 100回 4secまで
-                clearInterval(interval0); }
-            let list_ul=document.querySelector(
-                '.com-pages-purchased-payperview-PurchasedPayperviewNoItem');
-            if(list_ul){
-                clearInterval(interval0);
-                base_style();
-                main_sub(); }}}
-
+    let Path_current=window.location.pathname;
+    if(actions[Path_current]){
+        actions[Path_current](); }
+    else{
+        let Path_pattern=/\/(video\/title|video\/episode|slots)/;
+        if(Path_pattern.test(window.location.pathname)){
+            env_mylist_set();
+            mylist_set(); }}
 
 } // area_check()
 
@@ -227,7 +235,6 @@ function main(){
 
 
 
-
 function base_style(){
 
     let size0_svg=
@@ -328,7 +335,7 @@ function base_style(){
 
         '</style>'+
 
-        '<style class="history" >'+ // History
+        '<style class="history">'+ // History
         'com-pages-viewing-history-ViewingHistoryList { background: #071521; border-radius: 0; } '+
         '.com-pages-viewing-history-ViewingHistoryListItem { margin: 4px 0; } '+
         '.com-pages-viewing-history-ViewingHistoryListItem__link { padding: 2px 8px; } '+
@@ -343,10 +350,10 @@ function base_style(){
         'font-size: 18px; font-weight: bold; color: #ddd; } '+
         '</style>'+
 
-        '<style class="normal" disabled>'+ // Normal
+        '<style class="normal">'+ // Normal
         '</style>'+
 
-        '<style class="compact" disabled>'+ // Compact
+        '<style class="compact">'+ // Compact
         '.com-my-list-MyListBaseItem { margin: 2px 0; height: 60px; overflow: hidden; } '+
         '.com-my-list-MyListBaseItem__thumbnail { width: 80px; margin: 0; } '+
         '.com-my-list-MyListBaseItem__details { position: relative; padding: 0; } '+
@@ -358,7 +365,7 @@ function base_style(){
         'position: absolute; top: 12px; right: 0; font-size: 0; gap: 0; margin-top: 0; } '+
         '</style>'+
 
-        '<style class="mini" disabled>'+ // Mini
+        '<style class="mini">'+ // Mini
         '.com-my-list-MyListBaseItem { height: 38px; margin: 2px 0; overflow: hidden; } '+
         '.com-my-list-MyListBaseItem__thumbnail { display: none; } '+
         '.com-my-list-MyListBaseItem__details { position: relative; display: flex; padding: 0; } '+
@@ -375,15 +382,15 @@ function base_style(){
         'position: absolute; top: 1px; right: 0; font-size: 0; gap: 0; margin-top: 0; } '+
         '</style>'+
 
-        '<style class="all_list" disabled>'+ // リスト全体を表示
+        '<style class="all_list">'+ // リスト全体を表示
         '</style>'+
 
-        '<style class="serise" disabled>'+ // シリーズ登録を表示
+        '<style class="serise">'+ // シリーズ登録を表示
         '.com-pages-mylist-MylistContentItemList li:has(a[href*="slots"]), '+
         '.com-pages-mylist-MylistContentItemList li:has(a[href*="episode"]) { display: none; } '+
         '</style>'+
 
-        '<style class="episode" disabled>'+ // エピソード登録を表示
+        '<style class="episode">'+ // エピソード登録を表示
         '.com-pages-mylist-MylistContentItemList '+
         'li:not(:has(a[href*="slots"])):not(:has(a[href*="episode"])) { display: none; } '+
         '</style>';
@@ -394,7 +401,6 @@ function base_style(){
             main.insertAdjacentHTML('beforeend', mlc_style); }}
 
 } // base_style()
-
 
 
 
@@ -412,3 +418,156 @@ function main_sub(){
         }); });
 
 } // main_sub()
+
+
+
+
+function env_mylist_set(){
+    let style=
+        '<style class="M_Anywhere">'+
+        '.com-m-NotificationManager.ma { width: auto; } '+
+        '.ma .com-application-NotificationToast { background-color: #00f0fe; height: 40px; } '+
+        '.com-application-NotificationToast__button-wrapper, '+
+        '.com-application-NotificationToast__close-button { display: none; } '+
+        '</style>';
+
+    if(!document.querySelector('.M_Anywhere')){
+        document.body.insertAdjacentHTML('beforeend', style); }
+
+
+    let target1=document.querySelector('#main > div');
+    let monitor1=new MutationObserver(get_note);
+    monitor1.observe(target1, { childList: true });
+
+    function get_note(){
+        let note=document.querySelector('.com-m-NotificationManager');
+        if(note){
+            note.classList.add('ma'); }}
+
+} // env_mylist_set()
+
+
+
+function mylist_set(){
+    window.addEventListener('keydown', function(event){
+        if(event.keyCode=='112'){ //「F1」押下 シリーズ登録
+            event.preventDefault();
+            mylist_shift(); }
+        if(event.keyCode=='113'){ //「F2」押下 シリーズ削除
+            event.preventDefault();
+            mylist_off(); }}, true); }
+
+
+
+function mylist_shift(){ // 動画シリーズのマイリスト再登録
+    let button=document.querySelector('.com-shared-my-list-MyListBaseCircleButton__button');
+    if(button){
+        button.click();
+
+        setTimeout(()=>{
+            let BSL=document.querySelectorAll('[class$="ButtonSelectListItem__container"]');
+            if(BSL[0]){ //「シリーズを追加」「毎回追加」のボタンがある場合
+                if(!is_added(BSL[0])){ // BSL[0]未登録
+                    BSL[0].click();
+
+                    setTimeout(()=>{
+                        if(b_active(button)){ // BSL[0]登録完了
+                            button.click();
+                            return; }
+                        else{
+                            error_talk(); }
+                    }, 400); }
+
+                else{ // BSL[0]登録済み
+                    BSL[0].click();
+
+                    setTimeout(()=>{
+                        BSL[0].click(); // BSL[0]再登録
+                    }, 400);
+                    setTimeout(()=>{
+                        if(b_active(button)){ // BSL[0]登録完了
+                            button.click();
+                            return; }
+                        else{
+                            error_talk(); }
+                    }, 800); }
+            } //「シリーズを追加」「毎回追加」のボタンがある場合
+
+            else { //「シリーズを追加」「毎回追加」のボタンがない場合
+                if(b_default(button)){ // 未登録に戻っていた場合
+                    button.click();
+
+                    setTimeout(()=>{
+                        if(b_active(button)){ // 再登録完了
+                            return; }
+                        else{
+                            error_talk(); }
+                    }, 400); }
+                else{ // 登録になっていた場合
+                    return; } // 登録完了
+            } //「シリーズを追加」「毎回追加」のボタンがない場合
+
+        }, 400);
+
+    } // if(button)
+
+} // mylist_shift()
+
+
+
+function mylist_off(){ // 動画シリーズのマイリスト登録の削除
+    let button=document.querySelector('.com-shared-my-list-MyListBaseCircleButton__button');
+    if(button){
+        if(b_default(button)){ // 未登録の場合
+            return; }
+        else{ // 登録済の場合
+            button.click();
+
+            setTimeout(()=>{
+                let BSL=document.querySelectorAll('[class$="ButtonSelectListItem__container"]');
+                if(BSL[0]){ //「シリーズを追加」「毎回追加」のボタンがある場合
+                    if(!is_added(BSL[0])){ // BSL[0]未登録
+                        button.click();
+                        return; }
+                    else{ // BSL[0]登録済
+                        BSL[0].click();
+
+                        setTimeout(()=>{
+                            if(!is_added(BSL[0])){ // BSL[0]登録の削除完了
+                                button.click();
+                                return; }
+                            else{
+                                error_talk(); }
+                        }, 400); }} //「シリーズを追加」「毎回追加」のボタンがある場合
+
+                else{ //「シリーズを追加」「毎回追加」のボタンがない場合
+                    if(b_default(button)){ // 未登録に変わった場合
+                        return; } // 削除完了
+                    else{
+                        error_talk(); }} //「シリーズを追加」「毎回追加」のボタンがない場合
+
+            }, 400); } // 登録済の場合
+
+    } // if(button)
+
+} // mylist_off()
+
+
+
+function b_default(button){
+    if(button.querySelector('[class$="CircleButton__button-outline--default"]')){
+        return true; }} // マイリストボタン未登録
+
+
+function b_active(button){
+    if(button.querySelector('[class$="CircleButton__button-outline--active"]')){
+        return true; }} // マイリストボタン登録完了
+
+
+function is_added(p_button){
+    if(p_button.querySelector('[class$="Item__left-container--is-added"]')){
+        return true; }} // シリーズの登録完了
+
+
+function error_talk(){
+    alert("マイリスト登録を確認してください"); }
