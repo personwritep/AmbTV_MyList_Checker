@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        AmbTV MyList Checker
 // @namespace        http://tampermonkey.net/
-// @version        0.6
+// @version        0.7
 // @description        マイリストを利用した無料配信のチェックツール
 // @author        AbemaTV User
 // @match        https://abema.tv/*
@@ -77,8 +77,8 @@ function area_check(){
     if(actions[Path_current]){
         actions[Path_current](); }
     else{
-        let Path_pattern=/\/(video\/title|video\/episode|slots)/;
-        if(Path_pattern.test(window.location.pathname)){
+        let Path_Pattern=/\/(video\/title|video\/episode|slots)/;
+        if(Path_Pattern.test(window.location.pathname)){
             env_mylist_set();
             mylist_set(); }}
 
@@ -99,8 +99,8 @@ function main(){
         document.querySelector('.mini') ];
 
 
-    sected_disp=localStorage.getItem('ABEMA_Mylist_disp');
-    disp_selected(sected_disp/1); //「sort」形式を設定
+    count_ajust();
+
 
     let input_disp=document.querySelectorAll('input[name="sect_disp"]');
     input_disp.forEach(radio=>{
@@ -185,6 +185,29 @@ function main(){
     if(nav_button){
         if(!document.querySelector('.com-application-SideNavigation--closed')){
             nav_button.click(); }} // デフォルトで左サイドメニューを閉じる
+
+
+
+    let list_wrap=document.querySelector('.com-pages-mylist-MylistPage__contentListWrapper');
+    if(list_wrap){
+        let monitor2=new MutationObserver(count_ajust);
+        monitor2.observe(list_wrap, { attributes: true }); }
+
+
+
+    function count_ajust(){
+        sected_disp=localStorage.getItem('ABEMA_Mylist_disp');
+        let list_ul=document.querySelector('.com-pages-mylist-MylistContentItemList');
+        if(list_ul){
+            disp_selected(0); //「sort」形式を全件表示にする
+            list_ul.classList.add('list_count');
+            setTimeout(()=>{
+                list_ul.classList.remove('list_count');
+            }, 200);
+            setTimeout(()=>{
+                disp_selected(sected_disp/1);
+            }, 300); }}
+
 
 
     let mylist_w=document.querySelector('.com-pages-mylist-MylistPage__contentListWrapper');
@@ -332,7 +355,6 @@ function base_style(){
         '.com-my-list-MyListBaseItem__delete-icon { color: red; opacity: 0.7; } '+
         '.com-my-list-MyListBaseItem__delete-button:hover '+
         '.com-my-list-MyListBaseItem__delete-icon { opacity: 1; } '+
-
         '</style>'+
 
         '<style class="history">'+ // History
@@ -393,6 +415,13 @@ function base_style(){
         '<style class="episode">'+ // エピソード登録を表示
         '.com-pages-mylist-MylistContentItemList '+
         'li:not(:has(a[href*="slots"])):not(:has(a[href*="episode"])) { display: none; } '+
+        '</style>'+
+
+        '<style class="count_ajust">'+ // カウント実行のデザイン
+        '.list_count li { height: 0; } '+
+        '.list_count .com-my-list-MyListBaseItem__thumbnail, '+
+        '.list_count .com-my-list-MyListBaseItem__details, '+
+        '.list_count .com-my-list-MyListBaseItem__delete-button { display: none; } '+
         '</style>';
 
     let main=document.querySelector('.c-application-DesktopAppContainer__main');
