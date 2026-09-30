@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        AmbTV MyList Checker
 // @namespace        http://tampermonkey.net/
-// @version        0.7
+// @version        0.8
 // @description        マイリストを利用した無料配信のチェックツール
 // @author        AbemaTV User
 // @match        https://abema.tv/*
@@ -81,6 +81,12 @@ function area_check(){
         if(Path_Pattern.test(window.location.pathname)){
             env_mylist_set();
             mylist_set(); }}
+
+
+    window.addEventListener('keydown', function(event){
+        if(event.keyCode=='114'){ //「F3」押下 マイリストを開く
+            event.preventDefault();
+            location.href="/mylist"; }}, true);
 
 } // area_check()
 
@@ -484,7 +490,9 @@ function mylist_set(){
             mylist_shift(); }
         if(event.keyCode=='113'){ //「F2」押下 シリーズ削除
             event.preventDefault();
-            mylist_off(); }}, true); }
+            mylist_off(); }}, true);
+
+} // mylist_set()
 
 
 
